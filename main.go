@@ -16,7 +16,7 @@ import (
 	"github.com/BurntSushi/toml"
 	. "github.com/logrusorgru/aurora"
 	. "github.com/qnsoft/live_sdk"
-	"github.com/qnsoft/live_utils"
+	utils "github.com/qnsoft/live_utils"
 	"github.com/qnsoft/live_utils/codec"
 )
 
@@ -37,7 +37,7 @@ var (
 func init() {
 	config.StaticPath = "ui"
 	plugin := &PluginConfig{
-		Name:   "GateWay",
+		Name:   "LiveWeb",
 		Config: &config,
 		Run:    run,
 	}
