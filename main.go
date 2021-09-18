@@ -16,7 +16,7 @@ import (
 	"github.com/BurntSushi/toml"
 	. "github.com/logrusorgru/aurora"
 	. "github.com/qnsoft/live_sdk"
-	utils "github.com/qnsoft/live_utils"
+	"github.com/qnsoft/live_utils"
 	"github.com/qnsoft/live_utils/codec"
 )
 
@@ -55,8 +55,8 @@ func run() {
 	http.HandleFunc("/api/gateway/getIFrame", getIFrame)
 	http.HandleFunc("/api/gateway/h264", getH264)
 	http.HandleFunc("/", website)
-	utils.Print(Green("server gateway start at "), BrightBlue(config.ListenAddr), BrightBlue(config.ListenAddrTLS))
-	utils.ListenAddrs(config.ListenAddr, config.ListenAddrTLS, config.CertFile, config.KeyFile, nil)
+	live_utils.Print(Green("server LiveWeb start at "), BrightBlue(config.ListenAddr), BrightBlue(config.ListenAddrTLS))
+	live_utils.ListenAddrs(config.ListenAddr, config.ListenAddrTLS, config.CertFile, config.KeyFile, nil)
 }
 
 func getConfig(w http.ResponseWriter, r *http.Request) {
@@ -141,7 +141,7 @@ func getIFrame(w http.ResponseWriter, r *http.Request) {
 				w.Write(v.ExtraData.Payload[5:])
 				idr := v.IDRing.Value.(*AVItem).Value.(*VideoPack)
 				b := make([]byte, 4)
-				utils.BigEndian.PutUint32(b, uint32(len(idr.NALUs[0])))
+				live_utils.BigEndian.PutUint32(b, uint32(len(idr.NALUs[0])))
 				w.Write(b)
 				w.Write(idr.NALUs[0])
 			} else {
@@ -203,7 +203,7 @@ func getPlugins(w http.ResponseWriter, r *http.Request) {
 // func listenInfo(w http.ResponseWriter, r *http.Request) {
 // 	if streamPath := r.URL.Query().Get("stream"); streamPath != "" {
 // 		if stream := FindStream(streamPath); stream != nil {
-// 			sse := utils.NewSSE(w, r.Context())
+// 			sse := live_utils.NewSSE(w, r.Context())
 // 			sub := Subscriber{Type: "GateWay", ID: r.RemoteAddr, Ctx2: r.Context()}
 // 			at := stream.OriginAudioTrack
 // 			vt := stream.OriginVideoTrack
@@ -218,7 +218,7 @@ func getPlugins(w http.ResponseWriter, r *http.Request) {
 // 				sse.WriteJSON(sendList)
 // 			}
 // 			sub.Play(at, vt)
-// 			utils.Println("cancel listenInfo")
+// 			live_utils.Println("cancel listenInfo")
 // 		} else {
 // 			w.Write([]byte("no such stream"))
 // 		}
