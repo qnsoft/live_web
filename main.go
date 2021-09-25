@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	. "github.com/logrusorgru/aurora"
-	. "github.com/qnsoft/live_sdk"
+	"github.com/logrusorgru/aurora"
+	"github.com/qnsoft/live_sdk"
 	"github.com/qnsoft/live_utils"
 	"github.com/qnsoft/live_utils/codec"
 )
@@ -36,12 +36,12 @@ var (
 
 func init() {
 	config.StaticPath = "ui"
-	plugin := &PluginConfig{
+	plugin := &live_sdk.PluginConfig{
 		Name:   "LiveWeb",
 		Config: &config,
 		Run:    run,
 	}
-	InstallPlugin(plugin)
+	live_sdk.InstallPlugin(plugin)
 }
 func run() {
 	http.HandleFunc("/api/gateway/sysInfo", sysInfo)
@@ -55,20 +55,20 @@ func run() {
 	http.HandleFunc("/api/gateway/getIFrame", getIFrame)
 	http.HandleFunc("/api/gateway/h264", getH264)
 	http.HandleFunc("/", website)
-	live_utils.Print(Green("server LiveWeb start at "), BrightBlue(config.ListenAddr), BrightBlue(config.ListenAddrTLS))
+	live_utils.Print(aurora.Green("server LiveWeb start at "), aurora.BrightBlue(config.ListenAddr), aurora.BrightBlue(config.ListenAddrTLS))
 	live_utils.ListenAddrs(config.ListenAddr, config.ListenAddrTLS, config.CertFile, config.KeyFile, nil)
 }
 
 func getConfig(w http.ResponseWriter, r *http.Request) {
-	w.Write(ConfigRaw)
+	w.Write(live_sdk.ConfigRaw)
 }
 
 // 输出h264裸码流
 func getH264(w http.ResponseWriter, r *http.Request) {
 	if streamPath := r.URL.Query().Get("stream"); streamPath != "" {
-		p := Subscriber{
+		p := live_sdk.Subscriber{
 			Type: "h264 raw",
-			OnVideo: func(ts uint32, pack *VideoPack) {
+			OnVideo: func(ts uint32, pack *live_sdk.VideoPack) {
 				for _, nalu := range pack.NALUs {
 					w.Write(codec.NALU_Delimiter2)
 					w.Write(nalu)
@@ -97,7 +97,7 @@ func getH264(w http.ResponseWriter, r *http.Request) {
 func stopPublish(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	if streamPath := r.URL.Query().Get("stream"); streamPath != "" {
-		if s := FindStream(streamPath); s != nil {
+		if s := live_sdk.FindStream(streamPath); s != nil {
 			s.Close()
 			w.Write([]byte("success"))
 		} else {
@@ -136,10 +136,10 @@ func website(w http.ResponseWriter, r *http.Request) {
 func getIFrame(w http.ResponseWriter, r *http.Request) {
 	if streamPath := r.URL.Query().Get("stream"); streamPath != "" {
 		// codec := r.URL.Query().Get("codec")
-		if s := FindStream(streamPath); s != nil {
+		if s := live_sdk.FindStream(streamPath); s != nil {
 			if v := s.WaitVideoTrack(); v != nil {
 				w.Write(v.ExtraData.Payload[5:])
-				idr := v.IDRing.Value.(*AVItem).Value.(*VideoPack)
+				idr := v.IDRing.Value.(*live_sdk.AVItem).Value.(*live_sdk.VideoPack)
 				b := make([]byte, 4)
 				live_utils.BigEndian.PutUint32(b, uint32(len(idr.NALUs[0])))
 				w.Write(b)
@@ -157,7 +157,7 @@ func getIFrame(w http.ResponseWriter, r *http.Request) {
 
 func sysInfo(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	bytes, err := json.Marshal(map[string]string{"Version": Version, "StartTime": StartTime.Format("2006-01-02 15:04:05")})
+	bytes, err := json.Marshal(map[string]string{"Version": live_sdk.Version, "StartTime": live_sdk.StartTime.Format("2006-01-02 15:04:05")})
 	if err == nil {
 		_, err = w.Write(bytes)
 	}
@@ -175,7 +175,7 @@ type PluginInfo struct {
 func getPlugins(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	var plugins []*PluginInfo
-	for _, plugin := range Plugins {
+	for _, plugin := range live_sdk.Plugins {
 		p := &PluginInfo{
 			plugin.Name, "", "", plugin.Version, nil,
 		}
@@ -288,7 +288,7 @@ type SnapShot struct {
 // }
 func modifyConfig(w http.ResponseWriter, r *http.Request) {
 	if pluginName := r.URL.Query().Get("name"); pluginName != "" {
-		if plugin, ok := Plugins[pluginName]; ok {
+		if plugin, ok := live_sdk.Plugins[pluginName]; ok {
 			if key := r.URL.Query().Get("key"); key != "" {
 				if plugin.HotConfig != nil {
 					if f, ok := plugin.HotConfig[key]; ok {
